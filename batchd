@@ -22,20 +22,20 @@ function exec_job {
 	# Make sure all files exist.
 	touch STD{IN,OUT,ERR}
 
-	# Exit on error, clean(remove) STDERR on success.
-	tar -xmf $file 2>STDERR && rm ./STDERR || exit 1
+	# Go to end on error, continue on success.
+	tar -xmf $file 2>STDERR && {
 
-	# TODO: This is awful. The sleep forces an increase in timestamp
-	#       so that find works properly.
-	#       Should be solvable via overlayFS, to only get changed files.
-	sleep 1
+		# TODO: This is awful. The sleep forces an increase in timestamp
+		#       so that find works properly.
+		#       Should be solvable via overlayFS, to only get changed files.
+		sleep 1
 
-	./run <STDIN 1>STDOUT 2>STDERR || true # the script should not abort due to errors
-	
-	if [[ "$(wc -c ./STDERR)" = '0 ./STDERR' ]]; then
-		rm ./STDERR
-	fi
-	
+		./run <STDIN 1>STDOUT 2>STDERR || true # the script should not abort due to errors
+		
+		if [[ "$(wc -c ./STDERR)" = '0 ./STDERR' ]]; then
+			rm ./STDERR
+		fi
+	}
 	newfiles=$(find . ! -name ".*" -cnewer STDIN)
 	echo $(echo $newfiles|wc -l) files created/changed.
 	echo $newfiles

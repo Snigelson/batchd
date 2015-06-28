@@ -17,14 +17,13 @@ function exec_job {
 
 	mv $JOBDIR/$file $workdir
 	cd $workdir
-	tar -xmf $file 2>tarerror
-	# TODO: If tar failed, don't continue. Instead put the output
-	#       of tar in `STDERR`, touch `STDOUT`, tar and send back.
 
-	rm $file tarerror
+	# Make sure all files exist.
+	touch STD{IN,OUT,ERR}
 
-	# Touch in case STDIN does not exist.
-	touch STDIN
+	# Exit on error, clean(remove) STDERR on success.
+	tar -xmf $file 2>STDERR && rm ./STDERR || exit 1
+
 	# TODO: This is awful. The sleep forces an increase in timestamp
 	#       so that find works properly.
 	sleep 1

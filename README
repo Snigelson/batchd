@@ -1,0 +1,20 @@
+Batch soon-to-be-daemon.
+
+Expects jobs to be located in JOBDIR, output will be put in OUTDIR.
+Jobs in JOBDIR will be run in order of ctime; older jobs first.
+
+Jobs are tar files, optionally compressed. Output archives will have
+the same name as input file -- including extensions -- but always
+gzip compressed.
+
+Input files should have an executable file named `run` in the root.
+Input can be supplied in the file `STDIN`. The output of `run` will
+be redirected to `STDOUT` and `STDERR`.
+
+## TODO/wishlist
+
+* Jobs should be run as the same user who owns the job archive. Output
+  should have the same owner.
+* inotify should be used to keep track of job directory changes.
+* Output file count always shows 1.
+* Everything stops if `run` is not executable.

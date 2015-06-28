@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -e
+set -x
+
+# should use inotifywait to see if files are put in directory.
+#JOBDIR = /srv/batchd/jobs
+#WORKDIR=/srv/batchd/work and then you cahn choose if that is tmpfs or whatever
+JOBDIR=$(pwd)/jobs
+OUTDIR=$(pwd)/output
+basedir=$(pwd)
+
+function exec_job {
+	file=$1
+	workdir=$(mktemp -d)
+	echo Executing job $file in dir $workdir
+
+	mv $JOBDIR/$file $workdir
+	cd $workdir
+	tar -xmf $file 2>tarerror
+	# TODO: If tar failed, don't continue. Instead put the output
+	#       of tar in `STDERR`, touch `STDOUT`, tar and send back.
+
+	rm $file tarerror
+
+	# Touch in case STDIN does not exist.
+	touch STDIN
+	# TODO: This is awful. The sleep forces an increase in timestamp
+	#       so that find works properly.
+	sleep 1
+
+	./run <STDIN 1>STDOUT 2>STDERR
+
+	newfiles=$(find . ! -name ".*" -cnewer STDIN)
+	echo $(echo $newfiles|wc -l) files created/changed.
+	echo $newfiles
+
+	tar -czf $OUTDIR/$file $newfiles
+
+	cd $basedir
+	rm -rf $workdir
+}
+
+file=$(basename $(ls -drc $JOBDIR/*|head -n 1))
+
+exec_job $file
+
+exit 0

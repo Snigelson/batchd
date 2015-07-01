@@ -17,4 +17,3 @@ be redirected to `STDOUT` and `STDERR`.
   should have the same owner.
 * inotify should be used to keep track of job directory changes.
 * Output file count always shows 1.
-* Everything stops if `run` is not executable.

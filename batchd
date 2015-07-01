@@ -24,24 +24,29 @@ function exec_job {
 
 	# Go to end on error, continue on success.
 	tar -xmf $file 2>STDERR && {
+		echo Running job...
+
+		# Make sure STDIN is at least as new as the last file extracted
+		# from the job.
+		touch STDIN
 
 		# TODO: This is awful. The sleep forces an increase in timestamp
 		#       so that find works properly.
-		#       Should be solvable via overlayFS, to only get changed files.
+		#       Could be solved using overlayFS.
 		sleep 1
 
-		./run <STDIN 1>STDOUT 2>STDERR || true # the script should not abort due to errors
-		
-		if [[ "$(wc -c ./STDERR)" = '0 ./STDERR' ]]; then
-			rm ./STDERR
-		fi
+		./run <STDIN 1>STDOUT 2>STDERR || true
+		newfiles=$(find . ! -name ".*" -cnewer STDIN)
+	} || {
+		echo Unpack failed.
+		newfiles="STDIN STDOUT STDERR"
 	}
-	newfiles=$(find . ! -name ".*" -cnewer STDIN)
+
 	echo $(echo $newfiles|wc -l) files created/changed.
 	echo $newfiles
-	
+
 	# Use file suffix to choose compressor, or default to gzip
-	tar -caf $OUTDIR/$file $newfiles || tar -czf $OUTDIR/$file'.gz' $newfiles
+	tar -caf $OUTDIR/$file $newfiles
 
 	cd $basedir
 	rm -rf $workdir

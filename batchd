@@ -25,18 +25,8 @@ function exec_job {
 	# Go to end on error, continue on success.
 	tar -xmf $file 2>STDERR && {
 		echo Running job...
-
-		# Make sure STDIN is at least as new as the last file extracted
-		# from the job.
-		touch STDIN
-
-		# TODO: This is awful. The sleep forces an increase in timestamp
-		#       so that find works properly.
-		#       Could be solved using overlayFS.
-		sleep 1
-
 		./run <STDIN 1>STDOUT 2>STDERR || true
-		newfiles=$(find . ! -name ".*" -cnewer STDIN)
+		newfiles=$(find . ! -name ".*" -cnewer STDOUT)
 	} || {
 		echo Unpack failed.
 		newfiles="STDIN STDOUT STDERR"
